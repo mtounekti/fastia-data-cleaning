@@ -1,14 +1,11 @@
-# =============================================================================
 # BRIEF 1 - NETTOYAGE DE DONNÉES NUMÉRIQUES
 # Projet FastIA – Pipeline de traitement de données
-# =============================================================================
-# Ce script réalise l'ensemble du pipeline de traitement :
+# Ce script réalise l'ensemble du pipeline de traitement
 #   1. Analyse exploratoire (EDA)
 #   2. Détection des anomalies (valeurs manquantes, outliers)
 #   3. Nettoyage et transformation
 #   4. Export du dataset propre
 #   5. Rapport statistique avant/après
-# =============================================================================
 
 import pandas as pd
 import numpy as np
@@ -21,7 +18,7 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# ── Paramètres globaux ──────────────────────────────────────────────────────
+# Paramètres globaux
 FICHIER_SOURCE = "fichier-de-donnees-numeriques-69202f25dea8b267811864.csv"
 FICHIER_PROPRE = "dataset_propre.csv"
 SEUIL_COLONNE_VIDE = 0.40   # On supprime les colonnes avec > 40% de NaN
@@ -34,9 +31,7 @@ COULEUR_APRES = "#5B8DB8"
 
 os.makedirs("graphiques", exist_ok=True)
 
-# =============================================================================
 # SECTION 1 – CHARGEMENT ET PREMIER APERÇU
-# =============================================================================
 
 print("=" * 65)
 print("  ÉTAPE 1 – CHARGEMENT DU DATASET")
@@ -54,15 +49,13 @@ print(df_brut.dtypes.to_string())
 print(f"\n── Statistiques descriptives brutes ──")
 print(df_brut.describe().round(2).to_string())
 
-# =============================================================================
 # SECTION 2 – ANALYSE EXPLORATOIRE (EDA)
-# =============================================================================
 
 print("\n" + "=" * 65)
 print("  ÉTAPE 2 – ANALYSE EXPLORATOIRE")
 print("=" * 65)
 
-# ── 2.1 Valeurs manquantes ──────────────────────────────────────────────────
+# 2.1 Valeurs manquantes
 
 nb_manquants = df_brut.isnull().sum()
 pct_manquants = (nb_manquants / len(df_brut) * 100).round(2)
@@ -75,7 +68,7 @@ rapport_manquants = pd.DataFrame({
 print("\n── Rapport des valeurs manquantes ──")
 print(rapport_manquants.to_string())
 
-# ── 2.2 Colonnes sensibles ──────────────────────────────────────────────────
+# 2.2 Colonnes sensibles
 # Les colonnes 'poids' et 'taille' sont des données à caractère personnel
 # (données corporelles) – elles doivent être signalées et exclues du modèle
 # conformément aux bonnes pratiques RGPD / éthique IA.
@@ -83,7 +76,7 @@ COLONNES_SENSIBLES = ["poids", "taille"]
 print(f"\n⚠  Colonnes sensibles identifiées (données corporelles) : {COLONNES_SENSIBLES}")
 print("   → Ces colonnes seront supprimées avant tout traitement de modélisation.")
 
-# ── 2.3 Visualisation des valeurs manquantes (style missingno) ─────────────
+# 2.3 Visualisation des valeurs manquantes (style missingno)
 # Simulation du graphique missingno.matrix() sans la bibliothèque externe
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -119,7 +112,7 @@ plt.savefig("graphiques/01_valeurs_manquantes.png", dpi=150, bbox_inches="tight"
 plt.close()
 print("\n✔  Graphique sauvegardé : graphiques/01_valeurs_manquantes.png")
 
-# ── 2.4 Distribution des variables numériques ──────────────────────────────
+# 2.4 Distribution des variables numériques
 
 colonnes_num = df_brut.select_dtypes(include=np.number).columns.tolist()
 
@@ -148,7 +141,7 @@ plt.savefig("graphiques/02_distributions_brutes.png", dpi=150, bbox_inches="tigh
 plt.close()
 print("✔  Graphique sauvegardé : graphiques/02_distributions_brutes.png")
 
-# ── 2.5 Détection des outliers avec boxplots ───────────────────────────────
+# 2.5 Détection des outliers avec boxplots
 
 fig, axes = plt.subplots(3, 3, figsize=(15, 10))
 axes = axes.flatten()
@@ -189,9 +182,7 @@ print("\n── Rapport outliers (méthode IQR × 1.5) ──")
 df_outliers = pd.DataFrame(rapport_outliers).T
 print(df_outliers.to_string())
 
-# =============================================================================
 # SECTION 3 – NETTOYAGE ET TRANSFORMATION
-# =============================================================================
 
 print("\n" + "=" * 65)
 print("  ÉTAPE 3 – NETTOYAGE ET TRANSFORMATION")
@@ -200,7 +191,7 @@ print("=" * 65)
 # On travaille sur une copie pour préserver les données brutes
 df = df_brut.copy()
 
-# ── 3.1 Suppression des colonnes sensibles ─────────────────────────────────
+# 3.1 Suppression des colonnes sensibles
 # Décision : suppression de 'poids' et 'taille' (données corporelles)
 # Ces données sont considérées comme sensibles selon le RGPD et les pratiques
 # éthiques en IA. Elles ne sont pas nécessaires à l'objectif métier (crédit).
@@ -209,7 +200,7 @@ df = df.drop(columns=COLONNES_SENSIBLES)
 print(f"\n[3.1] ✔  Colonnes sensibles supprimées : {COLONNES_SENSIBLES}")
 print(f"       Dimensions restantes : {df.shape}")
 
-# ── 3.2 Suppression des colonnes quasi-vides (> 40% NaN) ──────────────────
+# 3.2 Suppression des colonnes quasi-vides (> 40% NaN)
 # Les colonnes 'historique_credits' (52.9%) et 'score_credit' (53.1%) sont
 # trop incomplètes pour être imputées de façon fiable. Leur signal utile
 # est limité et toute imputation introduirait un biais majeur.
@@ -223,7 +214,7 @@ for col in colonnes_a_supprimer:
 df = df.drop(columns=colonnes_a_supprimer)
 print(f"       Dimensions restantes : {df.shape}")
 
-# ── 3.3 Suppression des lignes trop incomplètes (> 50% colonnes NaN) ──────
+# 3.3 Suppression des lignes trop incomplètes (> 50% colonnes NaN)
 # Conformément aux modalités : on supprime les lignes très incomplètes.
 # Seuil fixé à 50% des colonnes restantes manquantes.
 
@@ -235,11 +226,11 @@ print(f"\n[3.3] ✔  Lignes trop incomplètes supprimées : {nb_supprime} "
       f"({nb_supprime/nb_avant*100:.2f}% du dataset)")
 print(f"       Dimensions restantes : {df.shape}")
 
-# ── 3.4 Traitement des outliers ────────────────────────────────────────────
+# 3.4 Traitement des outliers
 # Stratégie retenue : winsorisation (clipping) sur les bornes IQR × 1.5
 # Avantage : préserve les lignes tout en neutralisant les valeurs extrêmes.
 # Colonnes concernées : revenu_estime_mois, loyer_mensuel, montant_pret
-# Note : 'age' est borné [18-75] → pas d'outlier métier détecté.
+# Note : 'age' est borné [18-75] → pas d'outlier métier détecté
 
 colonnes_a_clipper = ["revenu_estime_mois", "loyer_mensuel", "montant_pret"]
 print("\n[3.4] Traitement des outliers par winsorisation (IQR × 1.5) :")
@@ -259,11 +250,11 @@ for col in colonnes_a_clipper:
     print(f"       - {col} : {nb_avant_clip} valeurs winsorisées "
           f"[{borne_basse:.2f} ; {borne_haute:.2f}]")
 
-# ── 3.5 Imputation des valeurs manquantes ──────────────────────────────────
+# 3.5 Imputation des valeurs manquantes
 # Colonne 'loyer_mensuel' : 29% de NaN → imputation par KNN (k=5)
 # Le KNN Imputer utilise les voisins les plus proches selon toutes les autres
 # variables pour estimer le loyer. C'est plus précis que la moyenne/médiane
-# car il tient compte des corrélations entre variables.
+# car il tient compte des corrélations entre variabless
 
 print("\n[3.5] Imputation des valeurs manquantes restantes :")
 print(f"       NaN avant imputation :")
@@ -280,7 +271,7 @@ print("       ✔  Aucune valeur manquante restante.")
 
 df = df_impute.copy()
 
-# ── 3.6 Arrondi des colonnes entières ─────────────────────────────────────
+# 3.6 Arrondi des colonnes entières
 # 'age' et 'revenu_estime_mois' étaient des entiers dans les données brutes.
 # Après le KNN, ils peuvent avoir des décimales → on les remet en entiers.
 
@@ -290,7 +281,7 @@ for col in ["age", "revenu_estime_mois"]:
 
 print("\n[3.6] ✔  Colonnes entières restaurées (age, revenu_estime_mois)")
 
-# ── 3.7 Vérification finale du dataset propre ─────────────────────────────
+# 3.7 Vérification finale du dataset propre
 
 print("\n[3.7] ── Vérification finale ──")
 print(f"  Dimensions : {df.shape[0]} lignes × {df.shape[1]} colonnes")
@@ -298,15 +289,13 @@ print(f"  Valeurs manquantes totales : {df.isnull().sum().sum()}")
 print(f"  Doublons : {df.duplicated().sum()}")
 print(f"  Colonnes : {list(df.columns)}")
 
-# =============================================================================
 # SECTION 4 – VISUALISATIONS APRÈS NETTOYAGE
-# =============================================================================
 
 print("\n" + "=" * 65)
 print("  ÉTAPE 4 – VISUALISATIONS APRÈS NETTOYAGE")
 print("=" * 65)
 
-# ── 4.1 Distributions avant / après sur les colonnes communes ─────────────
+# 4.1 Distributions avant / après sur les colonnes communes
 colonnes_communes = [col for col in df.columns if col in df_brut.columns]
 
 fig, axes = plt.subplots(len(colonnes_communes), 2,
@@ -315,14 +304,14 @@ fig.suptitle("Comparaison distributions – Avant vs Après nettoyage",
              fontsize=14, fontweight="bold")
 
 for i, col in enumerate(colonnes_communes):
-    # Avant
+    # le avant
     ax_avant = axes[i][0]
     sns.histplot(df_brut[col].dropna(), kde=True, ax=ax_avant,
                  color=COULEUR_AVANT, edgecolor="white")
     ax_avant.set_title(f"{col} — AVANT", fontsize=10)
     ax_avant.set_xlabel("")
 
-    # Après
+    # l'après
     ax_apres = axes[i][1]
     sns.histplot(df[col], kde=True, ax=ax_apres,
                  color=COULEUR_APRES, edgecolor="white")
@@ -334,7 +323,7 @@ plt.savefig("graphiques/04_comparaison_distributions.png", dpi=150, bbox_inches=
 plt.close()
 print("✔  Graphique sauvegardé : graphiques/04_comparaison_distributions.png")
 
-# ── 4.2 Boxplots après nettoyage ──────────────────────────────────────────
+# 4.2 Boxplots après nettoyage
 
 fig, axes = plt.subplots(1, len(df.columns), figsize=(14, 5))
 fig.suptitle("Boxplots après nettoyage – Vérification outliers",
@@ -352,7 +341,7 @@ plt.savefig("graphiques/05_boxplots_propres.png", dpi=150, bbox_inches="tight")
 plt.close()
 print("✔  Graphique sauvegardé : graphiques/05_boxplots_propres.png")
 
-# ── 4.3 Matrice de corrélation ────────────────────────────────────────────
+# 4.3 Matrice de corrélation!!
 
 fig, ax = plt.subplots(figsize=(9, 7))
 corr_matrix = df.corr(numeric_only=True)
@@ -366,8 +355,7 @@ plt.savefig("graphiques/06_correlation.png", dpi=150, bbox_inches="tight")
 plt.close()
 print("✔  Graphique sauvegardé : graphiques/06_correlation.png")
 
-# ── 4.4 Pairplot (aperçu des relations entre variables) ───────────────────
-# Sous-ensemble pour la lisibilité (4 colonnes clés)
+# 4.4 aperçu des relations entre variables
 colonnes_pairplot = ["age", "revenu_estime_mois", "loyer_mensuel", "montant_pret"]
 colonnes_pairplot = [c for c in colonnes_pairplot if c in df.columns]
 
@@ -379,9 +367,7 @@ g.savefig("graphiques/07_pairplot.png", dpi=120, bbox_inches="tight")
 plt.close()
 print("✔  Graphique sauvegardé : graphiques/07_pairplot.png")
 
-# =============================================================================
-# SECTION 5 – ANALYSE STATISTIQUE AVANT / APRÈS
-# =============================================================================
+# SECTION 5 – ANALYSE STATISTIQUE
 
 print("\n" + "=" * 65)
 print("  ÉTAPE 5 – ANALYSE STATISTIQUE AVANT / APRÈS")
@@ -411,12 +397,69 @@ for col in colonnes_communes:
 df_comparatif = pd.DataFrame(lignes).set_index("Colonne")
 print(df_comparatif.to_string())
 
-# =============================================================================
-# SECTION 6 – EXPORT DU DATASET PROPRE
-# =============================================================================
+# SECTION 6 – NORMALISATION / STANDARDISATION :D
+# Règles appliquées: 
+#   - Distribution approximativement normale → StandardScaler
+#   - Distribution non normale (asymétrique, bimodale) → MinMaxScaler
+#
+# Décisions prises d'après l'observation des distributions (graphique 02)
+#   StandardScaler : age, revenu_estime_mois, risque_personnel..
+#   MinMaxScaler : loyer_mensuel, montant_pret..
+
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 print("\n" + "=" * 65)
-print("  ÉTAPE 6 – EXPORT")
+print("  ÉTAPE 6 – NORMALISATION / STANDARDISATION")
+print("=" * 65)
+
+# colonnes à standardiser (distribution approximativement normale)
+colonnes_standard = ["age", "revenu_estime_mois", "risque_personnel"]
+
+# colonnes à normaliser (distribution non normale : bimodale ou asymétrique)
+colonnes_minmax = ["loyer_mensuel", "montant_pret"]
+
+# On garde une copie avant scaling pour le graphique comparatif!
+df_avant_scaling = df.copy()
+
+# standardisation
+scaler_standard = StandardScaler()
+df[colonnes_standard] = scaler_standard.fit_transform(df[colonnes_standard])
+print(f"\n[6.1] ✔  StandardScaler appliqué sur : {colonnes_standard}")
+print("       → moyenne ≈ 0, écart-type ≈ 1")
+
+# normalisation
+scaler_minmax = MinMaxScaler()
+df[colonnes_minmax] = scaler_minmax.fit_transform(df[colonnes_minmax])
+print(f"\n[6.2] ✔  MinMaxScaler appliqué sur : {colonnes_minmax}")
+print("       → valeurs ramenées entre 0 et 1")
+
+print("\n── Vérification après scaling ──")
+print(df.describe().round(3).to_string())
+
+# Graphique comparatif avant/après scaling
+fig, axes = plt.subplots(2, len(df.columns), figsize=(18, 7))
+fig.suptitle("Distributions avant / après scaling", fontsize=13, fontweight="bold")
+
+for i, col in enumerate(df.columns):
+    # Avant scaling
+    sns.histplot(df_avant_scaling[col], kde=True, ax=axes[0][i],
+                 color=COULEUR_AVANT, edgecolor="white")
+    axes[0][i].set_title(f"{col}\nAVANT", fontsize=9)
+
+    # Après scaling
+    sns.histplot(df[col], kde=True, ax=axes[1][i],
+                 color=COULEUR_APRES, edgecolor="white")
+    axes[1][i].set_title(f"{col}\nAPRÈS", fontsize=9)
+
+plt.tight_layout()
+plt.savefig("graphiques/08_scaling.png", dpi=150, bbox_inches="tight")
+plt.close()
+print("\n✔  Graphique sauvegardé : graphiques/08_scaling.png")
+
+# SECTION 7 – EXPORT DU DATASET PROPRE
+
+print("\n" + "=" * 65)
+print("  ÉTAPE 7 – EXPORT")
 print("=" * 65)
 
 df.to_csv(FICHIER_PROPRE, index=False)
@@ -424,7 +467,7 @@ print(f"\n✔  Dataset propre exporté : {FICHIER_PROPRE}")
 print(f"   {df.shape[0]} lignes × {df.shape[1]} colonnes")
 print(f"   Colonnes : {list(df.columns)}")
 
-# ── Résumé final des opérations ───────────────────────────────────────────
+# Résumé final des opérations
 print("\n" + "=" * 65)
 print("  RÉSUMÉ DU PIPELINE")
 print("=" * 65)
@@ -434,7 +477,7 @@ print(f"""
 
   Opérations réalisées :
   ┌─────────────────────────────────────────────────────────────┐
-  │ 1. Suppression colonnes sensibles : poids, taille           │
+  │ 1. Suppression colonnes sensibles: poids et taille           │
   │ 2. Suppression colonnes quasi-vides (>40% NaN) :            │
   │    historique_credits (52.9%), score_credit (53.1%)         │
   │ 3. Suppression lignes trop incomplètes (>50% NaN)           │
@@ -442,6 +485,8 @@ print(f"""
   │    revenu_estime_mois, loyer_mensuel, montant_pret           │
   │ 5. Imputation KNN (k=5) sur loyer_mensuel                   │
   │ 6. Restauration types entiers (age, revenu_estime_mois)     │
+  │ 7. StandardScaler: age, le revenu_estime_mois, risque_perso.  │
+  │    MinMaxScaler: loyer_mensuel, montant_pret             │
   └─────────────────────────────────────────────────────────────┘
 """)
 
